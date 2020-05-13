@@ -6,7 +6,7 @@
  * @flow strict-local
  */
 
-import React, {useMemo} from 'react';
+import React, {useMemo, useState, useCallback} from 'react';
 import {SafeAreaView, StyleSheet, View, StatusBar} from 'react-native';
 
 import Button from './components/Button';
@@ -29,6 +29,30 @@ const App = () => {
       },
     ];
   }, []);
+
+  const [history, setHistory] = useState([]);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+
+  const onBtnColorClick = useCallback(
+    color => {
+      setHistory([...history.slice(0, selectedIndex + 1), color]);
+      setSelectedIndex(selectedIndex + 1);
+    },
+    [history, selectedIndex, setHistory, setSelectedIndex],
+  );
+
+  const onUndoClick = useCallback(() => {
+    if (selectedIndex > 0) {
+      setSelectedIndex(selectedIndex - 1);
+    }
+  }, [selectedIndex, setSelectedIndex]);
+
+  const onRedoClick = useCallback(() => {
+    if (selectedIndex < history.length - 1) {
+      setSelectedIndex(selectedIndex + 1);
+    }
+  }, [selectedIndex, history, setSelectedIndex]);
+
   return (
     <>
       <StatusBar barStyle="dark-content" />
@@ -37,23 +61,42 @@ const App = () => {
           <View style={styles.buttonsWrapper}>
             {colorButtons.map(item => (
               <Button
+                key={item.color}
                 text=""
                 style={{backgroundColor: item.color, marginRight: 20}}
+                onClick={() => onBtnColorClick(item.color)}
               />
             ))}
             <Button
               text="Undo"
               style={{borderWidth: 2, borderColor: '#000', marginRight: 20}}
+              onClick={onUndoClick}
             />
-            <Button text="Redo" style={{borderWidth: 2, borderColor: '#000'}} />
+            <Button
+              text="Redo"
+              style={{borderWidth: 2, borderColor: '#000'}}
+              onClick={onRedoClick}
+            />
           </View>
           <View style={styles.squareWrapper}>
-            <Square width={120} />
+            <Square
+              width={120}
+              bgColor={
+                history && history.length > 0 ? history[selectedIndex] : '#000'
+              }
+            />
           </View>
           <View style={styles.history}>
-            <View style={styles.historyItem}>
-              <Square width={30} />
-            </View>
+            {history &&
+              history.map((color, idx) => (
+                <View style={styles.historyItem} key={idx}>
+                  <Square
+                    width={30}
+                    bgColor={color}
+                    isActive={idx === selectedIndex}
+                  />
+                </View>
+              ))}
           </View>
         </View>
       </SafeAreaView>
